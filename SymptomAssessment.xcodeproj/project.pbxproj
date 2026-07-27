@@ -15,6 +15,7 @@
 		3A0000000000000000000006 /* ManiaDiagnosisView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A0000000000000000000006 /* ManiaDiagnosisView.swift */; };
 		3A0000000000000000000007 /* AnalysisView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A0000000000000000000007 /* AnalysisView.swift */; };
 		3A0000000000000000000008 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2A0000000000000000000008 /* Assets.xcassets */; };
+		3A0000000000000000000009 /* PainRubric.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A0000000000000000000009 /* PainRubric.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -27,6 +28,7 @@
 		2A0000000000000000000006 /* ManiaDiagnosisView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManiaDiagnosisView.swift; sourceTree = "<group>"; };
 		2A0000000000000000000007 /* AnalysisView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalysisView.swift; sourceTree = "<group>"; };
 		2A0000000000000000000008 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		2A0000000000000000000009 /* PainRubric.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PainRubric.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -63,6 +65,7 @@
 				2A0000000000000000000002 /* ContentView.swift */,
 				2A0000000000000000000003 /* Models.swift */,
 				2A0000000000000000000004 /* AssessmentStore.swift */,
+				2A0000000000000000000009 /* PainRubric.swift */,
 				2A0000000000000000000005 /* PainEvaluationView.swift */,
 				2A0000000000000000000006 /* ManiaDiagnosisView.swift */,
 				2A0000000000000000000007 /* AnalysisView.swift */,
@@ -144,6 +147,7 @@
 				3A0000000000000000000002 /* ContentView.swift in Sources */,
 				3A0000000000000000000003 /* Models.swift in Sources */,
 				3A0000000000000000000004 /* AssessmentStore.swift in Sources */,
+				3A0000000000000000000009 /* PainRubric.swift in Sources */,
 				3A0000000000000000000005 /* PainEvaluationView.swift in Sources */,
 				3A0000000000000000000006 /* ManiaDiagnosisView.swift in Sources */,
 				3A0000000000000000000007 /* AnalysisView.swift in Sources */,
