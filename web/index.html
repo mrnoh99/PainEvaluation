@@ -5,6 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>증상 평가</title>
   <link rel="stylesheet" href="styles.css" />
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#3a6df0" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="증상 평가" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
 </head>
 <body>
   <header class="app-header">
@@ -116,8 +124,14 @@
   </main>
 
   <footer class="app-footer">
-    <button class="btn danger" id="clear-all">모든 기록 삭제</button>
-    <span class="footer-note">기록은 이 브라우저에만 저장됩니다.</span>
+    <div class="footer-actions">
+      <button class="btn" id="export-data">데이터 내보내기</button>
+      <button class="btn" id="import-data">데이터 가져오기</button>
+      <button class="btn danger" id="clear-all">모든 기록 삭제</button>
+      <input type="file" id="import-file" accept="application/json,.json" hidden />
+    </div>
+    <span class="footer-note" id="install-note">기록은 이 브라우저에만 저장됩니다. 백업하려면 "데이터 내보내기"를 사용하세요.</span>
+    <button class="btn primary" id="install-app" hidden>앱 설치</button>
   </footer>
 
   <script src="app.js"></script>

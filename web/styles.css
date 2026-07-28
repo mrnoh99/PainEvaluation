@@ -167,6 +167,7 @@ td.total-cell { font-weight: 700; color: var(--primary); }
 
 .app-footer {
   max-width: 860px; margin: 10px auto 40px; padding: 0 16px;
-  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 12px;
 }
+.footer-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .footer-note { color: var(--muted); font-size: 0.8rem; }

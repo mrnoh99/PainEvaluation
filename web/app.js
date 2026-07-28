@@ -409,6 +409,97 @@ function renderChart() {
   container.appendChild(svg);
 }
 
+/* ================= 데이터 내보내기 / 가져오기 ================= */
+$("export-data").addEventListener("click", () => {
+  const payload = {
+    app: "symptom-assessment",
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    pain: store.pain,
+    mania: store.mania,
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const stamp = new Date().toISOString().slice(0, 16).replace(/[:T]/g, "-");
+  a.href = url;
+  a.download = `증상평가-백업-${stamp}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+});
+
+$("import-data").addEventListener("click", () => $("import-file").click());
+
+$("import-file").addEventListener("change", (e) => {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(reader.result);
+      const inPain = Array.isArray(data.pain) ? data.pain : [];
+      const inMania = Array.isArray(data.mania) ? data.mania : [];
+      if (!inPain.length && !inMania.length) {
+        alert("가져올 기록이 없습니다. 올바른 백업 파일인지 확인해 주세요.");
+        return;
+      }
+      const merge = confirm(
+        `가져올 기록: 통증 평가 ${inPain.length}건, 조증 진단 ${inMania.length}건\n\n` +
+        "확인 = 현재 기록에 병합, 취소 = 가져오기 중단"
+      );
+      if (!merge) return;
+
+      const seenP = new Set(store.pain.map((r) => r.id));
+      inPain.forEach((r) => {
+        if (r && r.id && !seenP.has(r.id)) { store.pain.push(r); seenP.add(r.id); }
+      });
+      const seenM = new Set(store.mania.map((r) => r.id));
+      inMania.forEach((r) => {
+        if (r && r.id && !seenM.has(r.id)) { store.mania.push(r); seenM.add(r.id); }
+      });
+      store.pain.sort((a, b) => a.datetime.localeCompare(b.datetime));
+      store.mania.sort((a, b) => a.datetime.localeCompare(b.datetime));
+      saveData();
+      renderPainTable();
+      renderManiaTable();
+      renderAnalysis();
+      alert("가져오기가 완료되었습니다.");
+    } catch {
+      alert("파일을 읽을 수 없습니다. 올바른 JSON 백업 파일인지 확인해 주세요.");
+    } finally {
+      e.target.value = "";
+    }
+  };
+  reader.readAsText(file);
+});
+
+/* ================= PWA: 서비스워커 등록 + 설치 안내 ================= */
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  });
+}
+
+let deferredPrompt = null;
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  $("install-app").hidden = false;
+});
+$("install-app").addEventListener("click", async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  $("install-app").hidden = true;
+});
+window.addEventListener("appinstalled", () => {
+  deferredPrompt = null;
+  $("install-app").hidden = true;
+});
+
 /* ================= 초기화 ================= */
 buildPainItems();
 buildManiaQuestions();
