@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>증상 평가</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>증상 평가</h1>
+    <p class="subtitle">통증 평가 · 조증의 진단 · 결과 분석</p>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab active" data-tab="pain" role="tab">통증 평가</button>
+    <button class="tab" data-tab="mania" role="tab">조증의 진단</button>
+    <button class="tab" data-tab="analysis" role="tab">결과 분석</button>
+  </nav>
+
+  <main>
+    <!-- ================= 통증 평가 ================= -->
+    <section id="pain" class="panel active" role="tabpanel">
+      <div class="card">
+        <h2>통증 평가</h2>
+        <div class="field">
+          <label for="pain-datetime">날짜 및 시간</label>
+          <input type="datetime-local" id="pain-datetime" />
+        </div>
+        <div id="pain-items"><!-- 항목별 채점 UI 삽입 --></div>
+
+        <div class="total-line">총점 <strong id="pain-total">0</strong> / 40</div>
+        <div class="actions">
+          <button type="button" class="btn primary" id="pain-save">기록 저장</button>
+          <button type="button" class="btn" id="pain-reset">초기화</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>통증 평가 기록</h3>
+        <div class="table-wrap">
+          <table id="pain-table">
+            <thead>
+              <tr>
+                <th>날짜/시간</th><th>통증</th><th>우울감</th><th>해리·이인</th><th>잠</th><th>총점 /40</th><th></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p class="empty-msg" id="pain-empty">아직 저장된 기록이 없습니다.</p>
+      </div>
+    </section>
+
+    <!-- ================= 조증의 진단 ================= -->
+    <section id="mania" class="panel" role="tabpanel">
+      <div class="card">
+        <h2>조증의 진단</h2>
+        <p class="hint">기분이 들뜨거나 불안정하면서 지나치게 활동이 많아지는 상태가 1주일 이상 지속되면서(입원 시) 대체로 아래 증상 가운데 3가지 이상이 나타나는 경우.</p>
+        <div class="field">
+          <label for="mania-datetime">날짜 및 시간</label>
+          <input type="datetime-local" id="mania-datetime" />
+        </div>
+        <ol class="mania-list" id="mania-questions"></ol>
+
+        <div class="total-line">총점 <strong id="mania-total">0</strong> / 7</div>
+        <div class="actions">
+          <button type="button" class="btn primary" id="mania-save">기록 저장</button>
+          <button type="button" class="btn" id="mania-reset">초기화</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>조증 진단 기록</h3>
+        <div class="table-wrap">
+          <table id="mania-table">
+            <thead>
+              <tr>
+                <th>날짜/시간</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>총점 /7</th><th></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p class="empty-msg" id="mania-empty">아직 저장된 기록이 없습니다.</p>
+      </div>
+    </section>
+
+    <!-- ================= 결과 분석 ================= -->
+    <section id="analysis" class="panel" role="tabpanel">
+      <div class="card">
+        <h2>결과 분석</h2>
+        <p class="hint">날짜 및 시간에 따른 두 가지 점수(통증 평가 총점, 조증 진단 총점)의 변화를 표와 그래프로 확인합니다.</p>
+        <h3>그래프</h3>
+        <div class="legend">
+          <span class="legend-item"><span class="swatch pain"></span>통증 평가 총점 (/40)</span>
+          <span class="legend-item"><span class="swatch mania"></span>조증 진단 총점 (/7)</span>
+        </div>
+        <div id="chart-container"></div>
+        <p class="empty-msg" id="chart-empty">그래프를 그릴 데이터가 없습니다.</p>
+      </div>
+
+      <div class="card">
+        <h3>통합 표</h3>
+        <div class="table-wrap">
+          <table id="analysis-table">
+            <thead>
+              <tr><th>날짜/시간</th><th>통증 평가 총점 /40</th><th>조증 진단 총점 /7</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p class="empty-msg" id="analysis-empty">분석할 데이터가 없습니다.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <button class="btn danger" id="clear-all">모든 기록 삭제</button>
+    <span class="footer-note">기록은 이 브라우저에만 저장됩니다.</span>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

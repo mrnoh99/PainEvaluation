@@ -1,6 +1,9 @@
 # 증상 평가 (Symptom Assessment)
 
-통증 평가와 조증 진단을 기록하고, 두 점수의 변화를 표와 그래프로 분석하는 iOS(iPhone) 앱입니다. SwiftUI로 작성되었습니다.
+통증 평가와 조증 진단을 기록하고, 두 점수의 변화를 표와 그래프로 분석하는 도구입니다. 동일한 기능을 **iPhone 앱(SwiftUI)** 과 **웹 앱** 두 가지로 제공합니다.
+
+- `SymptomAssessment/`, `SymptomAssessment.xcodeproj` — iOS(iPhone) 앱
+- `web/` — 웹 앱 (브라우저에서 바로 실행)
 
 ## 구성
 
@@ -55,3 +58,22 @@ SymptomAssessment/
 ├── AnalysisView.swift           # 결과 분석(그래프 + 표) 화면
 └── Assets.xcassets              # 앱 아이콘/색상
 ```
+
+## 웹 앱 (web/)
+
+iOS 앱과 동일한 채점 기준·문항·이중 축 그래프를 그대로 구현한 웹 버전입니다. 외부 라이브러리나 빌드 과정 없이 순수 HTML/CSS/JavaScript로 작성되어 있습니다.
+
+### 실행
+- `web/index.html`을 브라우저에서 그대로 열면 됩니다. (별도 서버 불필요)
+- 기록은 브라우저의 `localStorage`에 저장됩니다.
+- 라이트/다크 모드를 자동으로 따릅니다.
+
+### 구성
+```
+web/
+├── index.html   # 3개 탭 화면 구조
+├── styles.css   # 스타일 (라이트/다크 테마)
+└── app.js       # 채점 기준 데이터, 저장/불러오기, 이중 축 SVG 그래프
+```
+
+두 버전 모두 채점 기준(`PainRubric.swift` ↔ `app.js`의 `PAIN_ITEMS`)과 조증 문항이 동일하게 유지됩니다.
