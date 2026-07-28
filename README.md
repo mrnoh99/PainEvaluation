@@ -73,13 +73,14 @@ iOS 앱과 동일한 채점 기준·문항·이중 축 그래프를 그대로 �
 
 `.github/workflows/deploy-pages.yml` 워크플로가 `web/` 폴더를 GitHub Pages로 자동 배포합니다. 기본 브랜치에 푸시되면 실행됩니다.
 
-최초 1회 설정이 필요할 수 있습니다.
+**최초 1회 설정 (필수)** — GitHub Pages는 워크플로 토큰 권한으로 자동 활성화할 수 없어, 저장소 소유자가 아래를 한 번 켜 주어야 합니다.
 
 1. GitHub 저장소 → **Settings → Pages**
 2. **Build and deployment → Source** 를 **GitHub Actions** 로 선택
-3. **Actions** 탭에서 "Deploy web app to GitHub Pages" 워크플로가 성공하면, 표시된 URL에서 접속
+3. **Actions** 탭 → "Deploy web app to GitHub Pages" 워크플로를 다시 실행(Re-run) 하거나, 아무 커밋이나 푸시
+4. 워크플로가 성공하면 표시된 URL(`https://mrnoh99.github.io/PainEvaluation/`)에서 접속
 
-> 워크플로가 Pages를 자동 활성화(`enablement: true`)하도록 되어 있어 대부분 별도 설정 없이 동작합니다. 만약 활성화 단계에서 실패하면 위 1~2번을 수동으로 진행하세요.
+> 위 1~2번을 켜기 전까지는 워크플로가 "Create Pages site failed" 로 실패합니다. 이는 정상이며, Source를 GitHub Actions로 지정한 뒤 재실행하면 배포됩니다.
 
 ### 구성
 ```
