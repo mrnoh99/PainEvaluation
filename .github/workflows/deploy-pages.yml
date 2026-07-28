@@ -1,0 +1,45 @@
+name: Deploy web app to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+      - claude/symptom-mania-assessment-tool-j4780q
+  workflow_dispatch:
+
+# GitHub Pages 배포에 필요한 권한
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 동시에 하나의 배포만 진행 (진행 중인 배포는 취소하지 않음)
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+        with:
+          # Pages가 아직 켜져 있지 않으면 자동으로 활성화 시도
+          enablement: true
+
+      # web/ 폴더만 사이트로 게시
+      - name: Upload web/ as Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: web
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -64,9 +64,22 @@ SymptomAssessment/
 iOS 앱과 동일한 채점 기준·문항·이중 축 그래프를 그대로 구현한 웹 버전입니다. 외부 라이브러리나 빌드 과정 없이 순수 HTML/CSS/JavaScript로 작성되어 있습니다.
 
 ### 실행
-- `web/index.html`을 브라우저에서 그대로 열면 됩니다. (별도 서버 불필요)
+- **로컬**: `web/index.html`을 브라우저에서 그대로 열면 됩니다. (별도 서버 불필요)
+- **온라인(GitHub Pages)**: 아래 배포 설정 후 `https://mrnoh99.github.io/PainEvaluation/` 에서 접속합니다.
 - 기록은 브라우저의 `localStorage`에 저장됩니다.
 - 라이트/다크 모드를 자동으로 따릅니다.
+
+### GitHub Pages 배포
+
+`.github/workflows/deploy-pages.yml` 워크플로가 `web/` 폴더를 GitHub Pages로 자동 배포합니다. 기본 브랜치에 푸시되면 실행됩니다.
+
+최초 1회 설정이 필요할 수 있습니다.
+
+1. GitHub 저장소 → **Settings → Pages**
+2. **Build and deployment → Source** 를 **GitHub Actions** 로 선택
+3. **Actions** 탭에서 "Deploy web app to GitHub Pages" 워크플로가 성공하면, 표시된 URL에서 접속
+
+> 워크플로가 Pages를 자동 활성화(`enablement: true`)하도록 되어 있어 대부분 별도 설정 없이 동작합니다. 만약 활성화 단계에서 실패하면 위 1~2번을 수동으로 진행하세요.
 
 ### 구성
 ```
