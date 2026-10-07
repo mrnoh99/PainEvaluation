@@ -160,7 +160,7 @@ td.total-cell { font-weight: 700; color: var(--primary); }
 #chart-container {
   width: 100%;
   overflow-x: auto;
-  touch-action: none;          /* 그래프 위 제스처는 전부 직접 처리(팬/핀치) */
+  touch-action: pan-y;         /* 세로 스와이프는 페이지 스크롤, 가로 팬·핀치는 직접 처리 */
   overscroll-behavior-x: contain;
   cursor: grab;
 }
