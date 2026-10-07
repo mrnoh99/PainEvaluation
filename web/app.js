@@ -601,6 +601,87 @@ $("import-file").addEventListener("change", (e) => {
   reader.readAsText(file);
 });
 
+/* ================= CSV 저장 / 메일 보내기 ================= */
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function csvEscape(v) {
+  v = v == null ? "" : String(v);
+  return /[",\n\r]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+}
+
+function csvFilename() {
+  const stamp = new Date().toISOString().slice(0, 16).replace(/[:T]/g, "-");
+  return `증상평가-${stamp}.csv`;
+}
+
+/* 통증·조증 기록을 날짜/시간 기준으로 합쳐 하나의 CSV로 만든다(Excel용 BOM 포함) */
+function buildCSV() {
+  const map = new Map();
+  store.pain.forEach((r) => {
+    const o = map.get(r.datetime) || { datetime: r.datetime };
+    o.pain = r.pain; o.dep = r.depression; o.dis = r.dissociation; o.sleep = r.sleep; o.painTotal = r.total;
+    map.set(r.datetime, o);
+  });
+  store.mania.forEach((r) => {
+    const o = map.get(r.datetime) || { datetime: r.datetime };
+    o.maniaTotal = r.total;
+    r.answers.forEach((a, i) => { o["m" + i] = a; });
+    map.set(r.datetime, o);
+  });
+  const rows = [...map.values()].sort((a, b) => a.datetime.localeCompare(b.datetime));
+  const headers = ["날짜시간", "통증", "우울감", "해리·이인", "잠", "통증평가총점(/40)", "조증진단총점(/7)",
+    "조증1", "조증2", "조증3", "조증4", "조증5", "조증6", "조증7"];
+  const lines = [headers.join(",")];
+  rows.forEach((o) => {
+    const cells = [
+      fmt(o.datetime),
+      o.pain ?? "", o.dep ?? "", o.dis ?? "", o.sleep ?? "", o.painTotal ?? "", o.maniaTotal ?? "",
+      ...[0, 1, 2, 3, 4, 5, 6].map((i) => (o["m" + i] == null ? "" : (o["m" + i] ? "예" : "아니요"))),
+    ];
+    lines.push(cells.map(csvEscape).join(","));
+  });
+  return "﻿" + lines.join("\r\n"); // BOM → Excel 한글 깨짐 방지
+}
+
+function hasRecords() { return store.pain.length > 0 || store.mania.length > 0; }
+
+$("export-csv").addEventListener("click", () => {
+  if (!hasRecords()) { alert("저장된 기록이 없습니다."); return; }
+  downloadBlob(new Blob([buildCSV()], { type: "text/csv;charset=utf-8" }), csvFilename());
+});
+
+$("email-csv").addEventListener("click", async () => {
+  if (!hasRecords()) { alert("보낼 기록이 없습니다."); return; }
+  const csv = buildCSV();
+  const name = csvFilename();
+
+  // 1) 파일 공유 지원 시(아이폰/안드로이드): 공유 시트 → 메일 앱에 CSV 첨부
+  try {
+    const file = new File([csv], name, { type: "text/csv" });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], title: "증상 평가 데이터", text: "증상 평가 CSV 데이터입니다." });
+      return;
+    }
+  } catch (err) {
+    if (err && err.name === "AbortError") return; // 사용자가 취소
+  }
+
+  // 2) 폴백(주로 데스크톱): CSV를 내려받고 메일 작성 창을 연다(첨부는 수동)
+  downloadBlob(new Blob([csv], { type: "text/csv;charset=utf-8" }), name);
+  const subject = encodeURIComponent("증상 평가 데이터");
+  const body = encodeURIComponent(`방금 내려받은 CSV 파일(${name})을 이 메일에 첨부해 보내세요.`);
+  location.href = `mailto:?subject=${subject}&body=${body}`;
+});
+
 /* ================= PWA: 서비스워커 등록 + 설치 안내 ================= */
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {

@@ -133,12 +133,14 @@
 
   <footer class="app-footer">
     <div class="footer-actions">
-      <button class="btn" id="export-data">데이터 내보내기</button>
-      <button class="btn" id="import-data">데이터 가져오기</button>
+      <button class="btn" id="export-data">JSON 백업</button>
+      <button class="btn" id="import-data">JSON 복원</button>
+      <button class="btn" id="export-csv">CSV 저장</button>
+      <button class="btn" id="email-csv">CSV 메일</button>
       <button class="btn danger" id="clear-all">모든 기록 삭제</button>
       <input type="file" id="import-file" accept="application/json,.json" hidden />
     </div>
-    <span class="footer-note" id="install-note">기록은 이 브라우저에만 저장됩니다. 백업하려면 "데이터 내보내기"를 사용하세요.</span>
+    <span class="footer-note" id="install-note">기록은 이 브라우저에만 저장됩니다. 백업은 "JSON 백업", 엑셀/메일용은 "CSV 저장·메일"을 사용하세요.</span>
     <button class="btn primary" id="install-app" hidden>앱 설치</button>
   </footer>
 
