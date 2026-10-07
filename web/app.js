@@ -335,7 +335,20 @@ function renderAnalysisTable() {
   });
 }
 
-/* 이중 축 선 그래프 (외부 라이브러리 없이 SVG로 직접 렌더링) */
+/* 이중 축 선 그래프 — 외부 라이브러리 없이 SVG로 직접 렌더링.
+   · 기본: 한 화면에 7개 데이터가 보이도록 간격 자동 설정
+   · 두 손가락(핀치)으로 데이터 간격을 좁히거나 넓힘
+   · 좌우로 밀어서(스크롤) 이동 */
+const CHART_M = { top: 24, right: 52, bottom: 76, left: 44 };
+const CHART_H = 340;
+const CHART_VISIBLE = 7;      // 한 화면 기본 표시 개수
+const CHART_MIN_PX = 14;      // 데이터 간 최소 간격(px) — 많이 축소
+const CHART_MAX_PX = 240;     // 데이터 간 최대 간격(px) — 많이 확대
+let chartPxPerPoint = null;   // null = 자동(7개 맞춤)
+let chartScrollToEnd = true;  // 렌더 후 최신(오른쪽)으로 스크롤
+
+const clampNum = (v, a, b) => Math.max(a, Math.min(b, v));
+
 function renderChart() {
   const container = $("chart-container");
   const rows = mergedTimeline();
@@ -349,12 +362,23 @@ function renderChart() {
   const gridColor = css.getPropertyValue("--border").trim() || "#dde3ec";
   const textColor = css.getPropertyValue("--muted").trim() || "#6b7688";
 
-  const W = Math.max(560, rows.length * 90), H = 340;
-  const m = { top: 24, right: 52, bottom: 70, left: 44 };
-  const iw = W - m.left - m.right, ih = H - m.top - m.bottom;
-  const PAIN_MAX = 40, MANIA_MAX = 7, n = rows.length;
+  const m = CHART_M, H = CHART_H, n = rows.length;
+  const PAIN_MAX = 40, MANIA_MAX = 7;
+  const cw = container.clientWidth || 600;
+  const availW = Math.max(120, cw - m.left - m.right);
 
-  const x = (i) => (n === 1 ? m.left + iw / 2 : m.left + (iw * i) / (n - 1));
+  // 간격(px) 결정: 기본은 7개가 availW에 들어오도록
+  const defaultPx = n > 1 ? availW / (CHART_VISIBLE - 1) : availW;
+  if (chartPxPerPoint == null) chartPxPerPoint = defaultPx;
+  chartPxPerPoint = clampNum(chartPxPerPoint, CHART_MIN_PX, CHART_MAX_PX);
+  const px = chartPxPerPoint;
+
+  const iw = n > 1 ? px * (n - 1) : 0;          // 데이터가 차지하는 폭
+  const plotW = Math.max(iw, availW);            // 그리드가 채우는 폭(최소 화면폭)
+  const W = m.left + plotW + m.right;
+  const ih = H - m.top - m.bottom;
+
+  const x = (i) => (n === 1 ? m.left + plotW / 2 : m.left + px * i);
   const yPain = (v) => m.top + ih - (ih * v) / PAIN_MAX;
   const yMania = (v) => m.top + ih - (ih * v) / MANIA_MAX;
 
@@ -373,21 +397,27 @@ function renderChart() {
   const steps = 4;
   for (let s = 0; s <= steps; s++) {
     const yy = m.top + (ih * s) / steps;
-    svg.appendChild(el("line", { x1: m.left, y1: yy, x2: m.left + iw, y2: yy, stroke: gridColor, "stroke-width": 1 }));
+    svg.appendChild(el("line", { x1: m.left, y1: yy, x2: m.left + plotW, y2: yy, stroke: gridColor, "stroke-width": 1 }));
     svg.appendChild(el("text", { x: m.left - 8, y: yy + 4, "text-anchor": "end", "font-size": 11, fill: painColor },
       Math.round(PAIN_MAX - (PAIN_MAX * s) / steps)));
-    svg.appendChild(el("text", { x: m.left + iw + 8, y: yy + 4, "text-anchor": "start", "font-size": 11, fill: maniaColor },
+    svg.appendChild(el("text", { x: m.left + plotW + 8, y: yy + 4, "text-anchor": "start", "font-size": 11, fill: maniaColor },
       (MANIA_MAX - (MANIA_MAX * s) / steps).toFixed(1)));
   }
   svg.appendChild(el("text", { x: m.left, y: 14, "text-anchor": "start", "font-size": 11, fill: painColor }, "통증 /40"));
-  svg.appendChild(el("text", { x: m.left + iw, y: 14, "text-anchor": "end", "font-size": 11, fill: maniaColor }, "조증 /7"));
+  svg.appendChild(el("text", { x: m.left + plotW, y: 14, "text-anchor": "end", "font-size": 11, fill: maniaColor }, "조증 /7"));
 
+  // x축 라벨: 간격이 좁으면 겹치지 않게 일정 간격마다만 표시(마지막은 항상)
+  const labelStep = Math.max(1, Math.ceil(68 / px));
   rows.forEach((r, i) => {
+    const isLast = i === n - 1;
+    // 일정 간격마다 + 마지막은 항상. 단 마지막과 너무 가까운 일반 라벨은 생략(겹침 방지)
+    if (!isLast && (i % labelStep !== 0 || (n - 1 - i) < labelStep)) return;
     r.datetime.replace("T", "\n").split("\n").forEach((p, k) => {
       svg.appendChild(el("text", { x: x(i), y: m.top + ih + 18 + k * 14, "text-anchor": "middle", "font-size": 10, fill: textColor }, p));
     });
   });
 
+  const showValues = px >= 34;  // 간격이 넓을 때만 점 위 숫자 표시
   function drawSeries(accessor, yFn, color) {
     let d = "", started = false;
     rows.forEach((r, i) => {
@@ -400,13 +430,67 @@ function renderChart() {
     rows.forEach((r, i) => {
       const v = accessor(r);
       if (v === null || v === undefined) return;
-      svg.appendChild(el("circle", { cx: x(i), cy: yFn(v), r: 4, fill: color }));
-      svg.appendChild(el("text", { x: x(i), y: yFn(v) - 9, "text-anchor": "middle", "font-size": 10, "font-weight": 700, fill: color }, v));
+      svg.appendChild(el("circle", { cx: x(i), cy: yFn(v), r: px < 24 ? 3 : 4, fill: color }));
+      if (showValues) svg.appendChild(el("text", { x: x(i), y: yFn(v) - 9, "text-anchor": "middle", "font-size": 10, "font-weight": 700, fill: color }, v));
     });
   }
   drawSeries((r) => r.pain, yPain, painColor);
   drawSeries((r) => r.mania, yMania, maniaColor);
   container.appendChild(svg);
+
+  if (chartScrollToEnd) { container.scrollLeft = container.scrollWidth; chartScrollToEnd = false; }
+}
+
+/* 뷰포트 중앙을 기준으로 간격 확대/축소(+/− 버튼) */
+function zoomChart(factor) {
+  const c = $("chart-container");
+  const old = chartPxPerPoint || 40;
+  const neu = clampNum(old * factor, CHART_MIN_PX, CHART_MAX_PX);
+  if (neu === old) return;
+  const centerContent = c.scrollLeft + c.clientWidth / 2;
+  chartPxPerPoint = neu;
+  renderChart();
+  const newCenter = CHART_M.left + (centerContent - CHART_M.left) * (neu / old);
+  c.scrollLeft = newCenter - c.clientWidth / 2;
+}
+
+/* 핀치(두 손가락) 제스처로 간격 조절 */
+function setupChartGestures() {
+  const c = $("chart-container");
+  if (!c) return;
+  const touchDist = (t) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+  let startDist = 0, startPx = 0, focusContent = 0, focusViewport = 0;
+
+  c.addEventListener("touchstart", (e) => {
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      startDist = touchDist(e.touches);
+      startPx = chartPxPerPoint || 40;
+      const rect = c.getBoundingClientRect();
+      const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+      focusViewport = midX - rect.left;                 // 화면 내 손가락 중심 x
+      focusContent = c.scrollLeft + focusViewport;       // 콘텐츠 좌표상 중심 x
+    }
+  }, { passive: false });
+
+  c.addEventListener("touchmove", (e) => {
+    if (e.touches.length === 2 && startDist > 0) {
+      e.preventDefault();
+      const neu = clampNum(startPx * (touchDist(e.touches) / startDist), CHART_MIN_PX, CHART_MAX_PX);
+      if (neu !== chartPxPerPoint) {
+        const ratio = neu / startPx;
+        chartPxPerPoint = neu;
+        renderChart();
+        // 손가락 중심 아래의 데이터 지점이 그대로 머무르도록 스크롤 보정
+        const newContent = CHART_M.left + (focusContent - CHART_M.left) * ratio;
+        c.scrollLeft = newContent - focusViewport;
+      }
+    }
+  }, { passive: false });
+
+  const endPinch = (e) => { if (e.touches.length < 2) startDist = 0; };
+  c.addEventListener("touchend", endPinch);
+  c.addEventListener("touchcancel", endPinch);
 }
 
 /* ================= 데이터 내보내기 / 가져오기 ================= */
@@ -498,6 +582,24 @@ $("install-app").addEventListener("click", async () => {
 window.addEventListener("appinstalled", () => {
   deferredPrompt = null;
   $("install-app").hidden = true;
+});
+
+/* ================= 그래프 확대/축소 버튼 + 제스처 ================= */
+$("chart-zoom-in").addEventListener("click", () => zoomChart(1.3));
+$("chart-zoom-out").addEventListener("click", () => zoomChart(1 / 1.3));
+$("chart-zoom-reset").addEventListener("click", () => {
+  chartPxPerPoint = null;     // 기본(7개 맞춤)으로
+  chartScrollToEnd = true;
+  renderChart();
+});
+setupChartGestures();
+
+// 분석 탭을 열거나 창 크기가 바뀌면 그래프를 기본 간격으로 다시 맞춤
+window.addEventListener("resize", () => {
+  if (document.getElementById("analysis").classList.contains("active")) {
+    chartPxPerPoint = null;
+    renderChart();
+  }
 });
 
 /* ================= 초기화 ================= */

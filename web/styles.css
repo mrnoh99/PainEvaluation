@@ -157,8 +157,29 @@ td.total-cell { font-weight: 700; color: var(--primary); }
 .empty-msg { color: var(--muted); font-size: 0.88rem; text-align: center; padding: 14px 0; margin: 0; }
 .hint { color: var(--muted); font-size: 0.9rem; margin-top: 0; }
 
-#chart-container { width: 100%; overflow-x: auto; }
-#chart-container svg { display: block; max-width: 100%; height: auto; }
+#chart-container {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x pan-y;   /* 한 손가락 스크롤 허용, 두 손가락 핀치는 직접 처리 */
+  overscroll-behavior-x: contain;
+}
+#chart-container svg { display: block; height: auto; }
+
+.chart-toolbar {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 10px; margin-bottom: 8px; flex-wrap: wrap;
+}
+.chart-hint { color: var(--muted); font-size: 0.78rem; }
+.chart-zoom { display: flex; gap: 6px; }
+.zoom-btn {
+  border: 1px solid var(--border); background: var(--card-bg); color: var(--text);
+  border-radius: 8px; padding: 5px 13px; font-size: 1rem; font-weight: 700;
+  cursor: pointer; min-width: 38px; line-height: 1; transition: all 0.12s;
+}
+.zoom-btn:hover { border-color: var(--muted); }
+.zoom-btn:active { background: var(--bg); }
+#chart-zoom-reset { font-size: 0.85rem; font-weight: 600; }
 .legend { display: flex; gap: 20px; margin-bottom: 12px; flex-wrap: wrap; }
 .legend-item { display: flex; align-items: center; gap: 7px; font-size: 0.85rem; color: var(--muted); }
 .swatch { width: 14px; height: 14px; border-radius: 4px; display: inline-block; }
