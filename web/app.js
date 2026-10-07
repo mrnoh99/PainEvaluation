@@ -341,13 +341,16 @@ function renderAnalysisTable() {
    · 좌우로 밀어서(스크롤) 이동 */
 const CHART_M = { top: 24, right: 52, bottom: 76, left: 44 };
 const CHART_H = 340;
-const CHART_VISIBLE = 7;      // 한 화면 기본 표시 개수
+const CHART_WIDE_BP = 600;    // 이 폭(px) 이상이면 넓은 화면으로 보고 기본 14개 표시
 const CHART_MIN_PX = 14;      // 데이터 간 최소 간격(px) — 많이 축소
 const CHART_MAX_PX = 240;     // 데이터 간 최대 간격(px) — 많이 확대
-let chartPxPerPoint = null;   // null = 자동(7개 맞춤)
+let chartPxPerPoint = null;   // null = 자동(화면 폭에 맞춰 기본 개수로)
 let chartScrollToEnd = true;  // 렌더 후 최신(오른쪽)으로 스크롤
 
 const clampNum = (v, a, b) => Math.max(a, Math.min(b, v));
+
+// 기본으로 한 화면에 보일 데이터 개수: 세로(좁은 화면) 7개, 넓은 화면 14개
+function chartDefaultVisible(cw) { return cw >= CHART_WIDE_BP ? 14 : 7; }
 
 function renderChart() {
   const container = $("chart-container");
@@ -367,8 +370,9 @@ function renderChart() {
   const cw = container.clientWidth || 600;
   const availW = Math.max(120, cw - m.left - m.right);
 
-  // 간격(px) 결정: 기본은 7개가 availW에 들어오도록
-  const defaultPx = n > 1 ? availW / (CHART_VISIBLE - 1) : availW;
+  // 간격(px) 결정: 기본은 화면 폭에 맞춘 개수(세로 7 / 넓으면 14)가 들어오도록
+  const visible = chartDefaultVisible(cw);
+  const defaultPx = n > 1 ? availW / (visible - 1) : availW;
   if (chartPxPerPoint == null) chartPxPerPoint = defaultPx;
   chartPxPerPoint = clampNum(chartPxPerPoint, CHART_MIN_PX, CHART_MAX_PX);
   const px = chartPxPerPoint;
@@ -636,13 +640,14 @@ $("chart-zoom-reset").addEventListener("click", () => {
 });
 setupChartGestures();
 
-// 분석 탭을 열거나 창 크기가 바뀌면 그래프를 기본 간격으로 다시 맞춤
-window.addEventListener("resize", () => {
-  if (document.getElementById("analysis").classList.contains("active")) {
-    chartPxPerPoint = null;
-    renderChart();
-  }
-});
+// 창 크기·방향이 바뀌면 그래프를 기본 간격(세로 7 / 넓으면 14)으로 다시 맞춤
+function resetChartDefault() {
+  chartPxPerPoint = null;
+  chartScrollToEnd = true;
+  if (document.getElementById("analysis").classList.contains("active")) renderChart();
+}
+window.addEventListener("resize", resetChartDefault);
+window.addEventListener("orientationchange", resetChartDefault);
 
 /* ================= 초기화 ================= */
 buildPainItems();
