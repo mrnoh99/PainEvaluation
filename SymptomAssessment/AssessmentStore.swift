@@ -99,4 +99,11 @@ enum Fmt {
         f.dateFormat = "yyyy년 M월 d일 HH:mm"
         return f
     }()
+
+    static let shortDate: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "ko_KR")
+        f.dateFormat = "M/d"
+        return f
+    }()
 }
