@@ -454,43 +454,70 @@ function zoomChart(factor) {
   c.scrollLeft = newCenter - c.clientWidth / 2;
 }
 
-/* 핀치(두 손가락) 제스처로 간격 조절 */
+/* 핀치 중심(focusContent: 핀치 시작 당시 콘텐츠 좌표, focusViewport: 화면 내 x)을
+   기준으로 간격을 newPx로 바꾸고, 그 지점이 손가락 아래 그대로 머무르도록 스크롤 보정 */
+function applyChartSpacing(newPx, startPx, focusContent, focusViewport) {
+  const c = $("chart-container");
+  newPx = clampNum(newPx, CHART_MIN_PX, CHART_MAX_PX);
+  if (newPx === chartPxPerPoint) return;
+  chartPxPerPoint = newPx;
+  renderChart();
+  const newContent = CHART_M.left + (focusContent - CHART_M.left) * (newPx / startPx);
+  c.scrollLeft = newContent - focusViewport;
+}
+
+/* 그래프 영역 안에서만 핀치로 간격 조절 + 좌우 이동.
+   영역 밖에서는 브라우저 기본 동작(페이지 확대/축소)이 그대로 작동한다. */
 function setupChartGestures() {
   const c = $("chart-container");
   if (!c) return;
+  const hasGesture = typeof window.GestureEvent !== "undefined"; // iOS Safari 핀치 이벤트 지원 여부
   const touchDist = (t) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
   let startDist = 0, startPx = 0, focusContent = 0, focusViewport = 0;
 
-  c.addEventListener("touchstart", (e) => {
-    if (e.touches.length === 2) {
-      e.preventDefault();
-      startDist = touchDist(e.touches);
-      startPx = chartPxPerPoint || 40;
-      const rect = c.getBoundingClientRect();
-      const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-      focusViewport = midX - rect.left;                 // 화면 내 손가락 중심 x
-      focusContent = c.scrollLeft + focusViewport;       // 콘텐츠 좌표상 중심 x
-    }
-  }, { passive: false });
+  const beginPinch = (clientX) => {
+    startPx = chartPxPerPoint || 40;
+    const rect = c.getBoundingClientRect();
+    focusViewport = clientX - rect.left;          // 화면 내 손가락 중심 x
+    focusContent = c.scrollLeft + focusViewport;   // 콘텐츠 좌표상 중심 x
+  };
 
-  c.addEventListener("touchmove", (e) => {
-    if (e.touches.length === 2 && startDist > 0) {
-      e.preventDefault();
-      const neu = clampNum(startPx * (touchDist(e.touches) / startDist), CHART_MIN_PX, CHART_MAX_PX);
-      if (neu !== chartPxPerPoint) {
-        const ratio = neu / startPx;
-        chartPxPerPoint = neu;
-        renderChart();
-        // 손가락 중심 아래의 데이터 지점이 그대로 머무르도록 스크롤 보정
-        const newContent = CHART_M.left + (focusContent - CHART_M.left) * ratio;
-        c.scrollLeft = newContent - focusViewport;
+  /* --- Android/Chrome 등: 두 손가락 touch 이벤트로 핀치 처리 --- */
+  if (!hasGesture) {
+    c.addEventListener("touchstart", (e) => {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        startDist = touchDist(e.touches);
+        beginPinch((e.touches[0].clientX + e.touches[1].clientX) / 2);
       }
-    }
-  }, { passive: false });
+    }, { passive: false });
 
-  const endPinch = (e) => { if (e.touches.length < 2) startDist = 0; };
-  c.addEventListener("touchend", endPinch);
-  c.addEventListener("touchcancel", endPinch);
+    c.addEventListener("touchmove", (e) => {
+      if (e.touches.length === 2 && startDist > 0) {
+        e.preventDefault(); // 그래프 안에서의 핀치는 페이지 확대로 넘기지 않음
+        applyChartSpacing(startPx * (touchDist(e.touches) / startDist), startPx, focusContent, focusViewport);
+      }
+    }, { passive: false });
+
+    const endPinch = (e) => { if (e.touches.length < 2) startDist = 0; };
+    c.addEventListener("touchend", endPinch);
+    c.addEventListener("touchcancel", endPinch);
+  }
+
+  /* --- iOS Safari: touch-action이 핀치를 막지 못하므로 gesture 이벤트로 처리 --- */
+  if (hasGesture) {
+    c.addEventListener("gesturestart", (e) => {
+      e.preventDefault();
+      beginPinch(e.clientX != null ? e.clientX : c.getBoundingClientRect().left + c.clientWidth / 2);
+    }, { passive: false });
+
+    c.addEventListener("gesturechange", (e) => {
+      e.preventDefault(); // 그래프 안에서의 핀치 → 간격 조절(페이지 확대 안 함)
+      applyChartSpacing(startPx * e.scale, startPx, focusContent, focusViewport);
+    }, { passive: false });
+
+    c.addEventListener("gestureend", (e) => { e.preventDefault(); }, { passive: false });
+  }
 }
 
 /* ================= 데이터 내보내기 / 가져오기 ================= */
