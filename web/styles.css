@@ -160,10 +160,11 @@ td.total-cell { font-weight: 700; color: var(--primary); }
 #chart-container {
   width: 100%;
   overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  touch-action: pan-x pan-y;   /* 한 손가락 스크롤 허용, 두 손가락 핀치는 직접 처리 */
+  touch-action: none;          /* 그래프 위 제스처는 전부 직접 처리(팬/핀치) */
   overscroll-behavior-x: contain;
+  cursor: grab;
 }
+#chart-container:active { cursor: grabbing; }
 #chart-container svg { display: block; height: auto; }
 
 .chart-toolbar {

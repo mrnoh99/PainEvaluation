@@ -466,58 +466,73 @@ function applyChartSpacing(newPx, startPx, focusContent, focusViewport) {
   c.scrollLeft = newContent - focusViewport;
 }
 
-/* 그래프 영역 안에서만 핀치로 간격 조절 + 좌우 이동.
-   영역 밖에서는 브라우저 기본 동작(페이지 확대/축소)이 그대로 작동한다. */
+/* 그래프 영역 안에서만 동작:
+   · 한 손가락(또는 마우스 드래그) → 좌우로 이동(팬)
+   · 두 손가락 핀치 → 데이터 간격 확대/축소(양방향)
+   그래프 밖에서는 아무 핸들러도 없어 브라우저 기본 동작(페이지 확대/축소)이 그대로 작동한다. */
 function setupChartGestures() {
   const c = $("chart-container");
   if (!c) return;
-  const hasGesture = typeof window.GestureEvent !== "undefined"; // iOS Safari 핀치 이벤트 지원 여부
-  const touchDist = (t) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
-  let startDist = 0, startPx = 0, focusContent = 0, focusViewport = 0;
 
-  const beginPinch = (clientX) => {
-    startPx = chartPxPerPoint || 40;
+  const pts = new Map();                 // 현재 눌려 있는 포인터들
+  let mode = 0;                          // 0=없음, 1=팬, 2=핀치
+  let panStartX = 0, panStartScroll = 0; // 팬 기준점
+  let pinchStartDist = 0, pinchStartPx = 0, focusContent = 0, focusViewport = 0;
+
+  const arr = () => [...pts.values()];
+  const twoDist = () => { const a = arr(); return Math.hypot(a[0].x - a[1].x, a[0].y - a[1].y); };
+  const twoMidX = () => { const a = arr(); return (a[0].x + a[1].x) / 2; };
+
+  const startPan = () => {
+    const a = arr()[0];
+    panStartX = a.x;
+    panStartScroll = c.scrollLeft;
+    mode = 1;
+  };
+  const startPinch = () => {
+    pinchStartDist = twoDist();
+    pinchStartPx = chartPxPerPoint || 40;
     const rect = c.getBoundingClientRect();
-    focusViewport = clientX - rect.left;          // 화면 내 손가락 중심 x
-    focusContent = c.scrollLeft + focusViewport;   // 콘텐츠 좌표상 중심 x
+    focusViewport = twoMidX() - rect.left;
+    focusContent = c.scrollLeft + focusViewport;
+    mode = 2;
   };
 
-  /* --- Android/Chrome 등: 두 손가락 touch 이벤트로 핀치 처리 --- */
-  if (!hasGesture) {
-    c.addEventListener("touchstart", (e) => {
-      if (e.touches.length === 2) {
-        e.preventDefault();
-        startDist = touchDist(e.touches);
-        beginPinch((e.touches[0].clientX + e.touches[1].clientX) / 2);
-      }
-    }, { passive: false });
+  c.addEventListener("pointerdown", (e) => {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    try { c.setPointerCapture(e.pointerId); } catch {}
+    if (pts.size === 1) startPan();
+    else if (pts.size === 2) startPinch();
+  });
 
-    c.addEventListener("touchmove", (e) => {
-      if (e.touches.length === 2 && startDist > 0) {
-        e.preventDefault(); // 그래프 안에서의 핀치는 페이지 확대로 넘기지 않음
-        applyChartSpacing(startPx * (touchDist(e.touches) / startDist), startPx, focusContent, focusViewport);
-      }
-    }, { passive: false });
-
-    const endPinch = (e) => { if (e.touches.length < 2) startDist = 0; };
-    c.addEventListener("touchend", endPinch);
-    c.addEventListener("touchcancel", endPinch);
-  }
-
-  /* --- iOS Safari: touch-action이 핀치를 막지 못하므로 gesture 이벤트로 처리 --- */
-  if (hasGesture) {
-    c.addEventListener("gesturestart", (e) => {
+  c.addEventListener("pointermove", (e) => {
+    if (!pts.has(e.pointerId)) return;
+    pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (mode === 2 && pts.size >= 2) {
       e.preventDefault();
-      beginPinch(e.clientX != null ? e.clientX : c.getBoundingClientRect().left + c.clientWidth / 2);
-    }, { passive: false });
+      applyChartSpacing(pinchStartPx * (twoDist() / pinchStartDist), pinchStartPx, focusContent, focusViewport);
+    } else if (mode === 1 && pts.size === 1) {
+      e.preventDefault();
+      c.scrollLeft = panStartScroll - (e.clientX - panStartX); // 한 손가락 좌우 이동
+    }
+  });
 
-    c.addEventListener("gesturechange", (e) => {
-      e.preventDefault(); // 그래프 안에서의 핀치 → 간격 조절(페이지 확대 안 함)
-      applyChartSpacing(startPx * e.scale, startPx, focusContent, focusViewport);
-    }, { passive: false });
+  const onUp = (e) => {
+    if (!pts.has(e.pointerId)) return;
+    pts.delete(e.pointerId);
+    try { c.releasePointerCapture(e.pointerId); } catch {}
+    if (pts.size === 1) startPan();      // 핀치 → 한 손가락: 남은 손가락으로 팬 재시작(점프 방지)
+    else if (pts.size === 0) mode = 0;
+  };
+  c.addEventListener("pointerup", onUp);
+  c.addEventListener("pointercancel", onUp);
 
-    c.addEventListener("gestureend", (e) => { e.preventDefault(); }, { passive: false });
-  }
+  // iOS Safari는 touch-action으로 핀치 확대를 막지 못하므로 gesture 이벤트를 눌러 둠
+  // (간격 조절은 위 pointer 로직이 담당, 여기서는 페이지 확대만 차단)
+  ["gesturestart", "gesturechange", "gestureend"].forEach((ev) =>
+    c.addEventListener(ev, (e) => e.preventDefault(), { passive: false })
+  );
 }
 
 /* ================= 데이터 내보내기 / 가져오기 ================= */
